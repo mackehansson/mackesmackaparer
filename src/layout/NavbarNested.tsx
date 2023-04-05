@@ -79,24 +79,16 @@ const useStyles = createStyles((theme) => ({
     },
 }));
 
-const tabs = [{ link: "/kopa-hem", label: "Köpa hem", icon: IconHomeCheck }];
+const tabs = [
+    //{ link: "/kopa-hem", label: "Köpa hem", icon: IconHomeCheck },
+    { link: "/buy-home", label: "Köpa hem", icon: IconHomeCheck },
+];
 
 export function NavbarNested() {
     const { classes, cx } = useStyles();
-    const [active, setActive] = useState("Billing");
 
     const links = tabs.map((item) => (
-        <Link
-            className={cx(classes.link, {
-                [classes.linkActive]: item.label === active,
-            })}
-            href={item.link}
-            key={item.label}
-            onClick={(event) => {
-                event.preventDefault();
-                setActive(item.label);
-            }}
-        >
+        <Link className={cx(classes.link)} href={item.link} key={item.label}>
             <item.icon className={classes.linkIcon} stroke={1.5} />
             <span>{item.label}</span>
         </Link>
@@ -105,21 +97,22 @@ export function NavbarNested() {
     return (
         <Navbar
             height="100%"
-            width={{ sm: 300 }}
             p="md"
             className={classes.navbar}
             withBorder={false}
         >
             <Navbar.Section>
-                <Text
-                    weight={500}
-                    size="sm"
-                    className={classes.title}
-                    color="dimmed"
-                    mb="xs"
-                >
-                    Mackes Mackapärer
-                </Text>
+                <Link href="/" className="no-underline">
+                    <Text
+                        weight={500}
+                        size="sm"
+                        className={classes.title}
+                        color="dimmed"
+                        mb="xs"
+                    >
+                        Mackes Mackapärer
+                    </Text>
+                </Link>
             </Navbar.Section>
 
             <Navbar.Section grow mt="xl">

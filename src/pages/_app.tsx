@@ -3,6 +3,7 @@ import { MantineProvider } from "@mantine/core";
 import { api } from "@/utils/api";
 
 import "@/styles/globals.css";
+import MainLayout from "@/layout/MainLayout";
 
 const MyApp: AppType = ({ Component, pageProps }) => {
     return (
@@ -14,7 +15,9 @@ const MyApp: AppType = ({ Component, pageProps }) => {
                 colorScheme: "dark",
             }}
         >
-            <Component {...pageProps} />
+            <MainLayout>
+                <Component {...pageProps} />
+            </MainLayout>
         </MantineProvider>
     );
 };
