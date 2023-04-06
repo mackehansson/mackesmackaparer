@@ -1,76 +1,126 @@
-import {
-    MantineTheme,
-    NumberInput,
-    Stack,
-    TextInput,
-    Title,
-} from "@mantine/core";
+import { Input, Slider, Stack, Title, Divider, Text } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import Head from "next/head";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
+import { NumericFormat } from "react-number-format";
 
 type FormData = {
-    profitTax: number;
-    currentHouseSaleAmount: number;
-    currentLoans: number;
-    housePrice: number;
-    mortgageDeed: number;
-    newCashDeposit: number;
-    vinstskatt: {
-        forsaljningspris: number;
-        inkopspris: number;
-        forsaljningskostnader: number;
-        forbattringsutgifter: number;
-        kapitaltillskott: number;
-        reparationsfondForsaljning: number;
-        reparationsfondKop: number;
-        aterforingUppskov: number;
-    };
+    bolan?: string;
+    forsaljningspris?: string;
+    inkopspris?: string;
+    forsaljningskostnader?: string;
+    forbattringsutgifter?: string;
+    kapitaltillskott?: string;
+    reparationsfondForsaljning?: string;
+    reparationsfondKop?: string;
+    aterforingUppskov?: string;
+    nyaPriset?: string;
+    driftkostnad?: string;
+    pantbrev?: string;
+    taxeringsvarde?: string;
+    bolaneranta?: string;
+    fastighetsskatt?: string;
 };
 
+function clearnInput(value?: string): number {
+    if (!value) return 0;
+    const removeSek = value.replace("SEK", "");
+    const removePercent = removeSek.replace("%", "");
+    const removeSpace = removePercent.replace(/\s/g, "");
+    return !Number.isNaN(parseFloat(removeSpace)) ? parseInt(removeSpace) : 0;
+}
+
+// initialValues: {
+//     bolan: "2 291 000 SEK",
+//     forsaljningspris: "3 100 000 SEK",
+//     inkopspris: "2 750 000 SEK",
+//     forsaljningskostnader: "60 000 SEK",
+//     forbattringsutgifter: "5 000 SEK",
+//     kapitaltillskott: "0 SEK",
+//     reparationsfondForsaljning: "0 SEK",
+//     reparationsfondKop: "0 SEK",
+//     aterforingUppskov: "0 SEK",
+//     bolaneranta: "4 %",
+//     driftkostnad: "5 000 SEK",
+//     fastighetsskatt: "9 000 SEK",
+//     nyaPriset: "2 700 000 SEK",
+//     pantbrev: "563 000 SEK",
+//     taxeringsvarde: "1 451 000 SEK",
+// },
 export default function BuyHomePage() {
-    const form = useForm<FormData>({
-        initialValues: {
-            currentLoans: 0,
-            housePrice: 0,
-            mortgageDeed: 0,
-            newCashDeposit: 0,
-            profitTax: 0,
-            currentHouseSaleAmount: 0,
-            vinstskatt: {
-                forsaljningspris: 0,
-                aterforingUppskov: 0,
-                forbattringsutgifter: 0,
-                forsaljningskostnader: 0,
-                inkopspris: 0,
-                kapitaltillskott: 0,
-                reparationsfondForsaljning: 0,
-                reparationsfondKop: 0,
-            },
-        },
-    });
+    const form = useForm<FormData>({});
 
-    const yourCashDeposit =
-        form.values.currentHouseSaleAmount - form.values.currentLoans;
+    const kvarPaLanet = useMemo(() => {
+        const bolan = clearnInput(form.values.bolan);
+        const forsaljningspris = clearnInput(form.values.forsaljningspris);
+        return forsaljningspris - bolan;
+    }, [form.values]);
 
-    const beraknaVinstskatt = useMemo(() => {
-        const forsaljningspris = form.values.vinstskatt.forsaljningspris;
-        const aterforingUppskov = form.values.vinstskatt.aterforingUppskov;
-        const forbattringsutgifter =
-            form.values.vinstskatt.forbattringsutgifter;
-        const forsaljningskostnader =
-            form.values.vinstskatt.forsaljningskostnader;
-        const inkopspris = form.values.vinstskatt.inkopspris;
-        const kapitaltillskott = form.values.vinstskatt.kapitaltillskott;
-        const reparationsfondForsaljning =
-            form.values.vinstskatt.reparationsfondForsaljning;
-        const reparationsfondKop = form.values.vinstskatt.reparationsfondKop;
-    }, [form.values.vinstskatt]);
+    const vinstskatt = useMemo(() => {
+        const forsaljningspris = clearnInput(form.values.forsaljningspris);
+        const inkopspris = clearnInput(form.values.inkopspris);
+        const forsaljningskostnader = clearnInput(
+            form.values.forsaljningskostnader
+        );
+        const forbattringsutgifter = clearnInput(
+            form.values.forbattringsutgifter
+        );
+        const kapitaltillskott = clearnInput(form.values.kapitaltillskott);
+        const reparationsfondForsaljning = clearnInput(
+            form.values.reparationsfondForsaljning
+        );
+        const reparationsfondKop = clearnInput(form.values.reparationsfondKop);
+        const aterforingUppskov = clearnInput(form.values.aterforingUppskov);
 
-    const [inputValue, setInputValue] = useState("");
+        const initVinst = forsaljningspris - inkopspris;
 
-    const handleChange = (event: React.ChangeEvent<HTMLInputElement>) =>
-        setInputValue(addCommas(removeNonNumeric(event.target.value)));
+        const vinst =
+            initVinst -
+            forsaljningskostnader -
+            forbattringsutgifter -
+            kapitaltillskott -
+            reparationsfondForsaljning +
+            reparationsfondKop +
+            aterforingUppskov;
+
+        return Math.round(Math.round(vinst) * (22 / 30) * 0.3);
+    }, [form.values]);
+
+    const kontantinsats = kvarPaLanet - vinstskatt;
+
+    const minstaKontantinsats = useMemo(() => {
+        const nyaPriset = clearnInput(form.values.nyaPriset);
+
+        return nyaPriset * 0.15;
+    }, [form.values]);
+
+    const rantaManad = useMemo(() => {
+        return 0;
+    }, []);
+
+    const driftkostnadManad = useMemo(() => {
+        return 0;
+    }, []);
+
+    const fastighetsskattManad = useMemo(() => {
+        return 0;
+    }, []);
+
+    const skattereduktionManad = useMemo(() => {
+        return 0;
+    }, []);
+
+    const summaManad = useMemo(() => {
+        return 0;
+    }, []);
+
+    const amorteringManad = useMemo(() => {
+        return 0;
+    }, []);
+
+    const totalaManadsPriset = useMemo(() => {
+        return 0;
+    }, []);
 
     return (
         <>
@@ -82,147 +132,338 @@ export default function BuyHomePage() {
                 />
                 <link rel="icon" href="/favicon.ico" />
             </Head>
-            <div className="grid grid-cols-12 gap-6">
-                <Stack className="col-span-6 p-6">
+            <div className="mb-6 grid grid-cols-12 gap-6">
+                <Stack className="col-span-6">
                     <Title>Köpa ett nytt hem</Title>
-                    <Title order={2}>Sälja BRF</Title>
 
-                    <input
-                        type="text"
-                        value={inputValue}
-                        onInput={handleChange}
-                    />
+                    <div className="bg-slate-100 p-4">
+                        <Stack>
+                            <Title order={2}>Sälja BRF</Title>
 
-                    <NumberInput
-                        label="Hur mycket bolån har du?"
-                        hideControls
-                        styles={inputStyles}
-                        {...form.getInputProps("currentLoans")}
-                        formatter={numberFormatter}
-                        onInput={(event) => {
-                            const value = event.currentTarget.value;
-                            form.setFieldValue(
-                                "currentLoans",
-                                parseFloat(addCommas(removeNonNumeric(value)))
-                            );
-                        }}
-                    />
+                            <Input.Wrapper label="Hur mycket bolån har du?">
+                                <Input
+                                    component={NumericFormat}
+                                    type="text"
+                                    {...form.getInputProps("bolan")}
+                                    suffix=" SEK"
+                                    thousandsGroupStyle="thousand"
+                                    thousandSeparator=" "
+                                    allowNegative={false}
+                                />
+                            </Input.Wrapper>
 
-                    <NumberInput
-                        label="Vad är priset?"
-                        hideControls
-                        styles={inputStyles}
-                        {...form.getInputProps("currentHouseSaleAmount")}
-                        formatter={numberFormatter}
-                    />
-                    <Title order={2}>Beräkna vinstskatt</Title>
-                    <NumberInput
-                        label="Försäljningspris"
-                        hideControls
-                        styles={inputStyles}
-                        {...form.getInputProps("vinstskatt.forsaljningspris")}
-                        formatter={numberFormatter}
-                    />
-                    <NumberInput
-                        label="Inköpspris"
-                        hideControls
-                        styles={inputStyles}
-                        {...form.getInputProps("vinstskatt.inkopspris")}
-                        formatter={numberFormatter}
-                    />
-                    <NumberInput
-                        label="Försäljningskostnader"
-                        hideControls
-                        styles={inputStyles}
-                        {...form.getInputProps(
-                            "vinstskatt.forsaljningskostnader"
-                        )}
-                        formatter={numberFormatter}
-                    />
-                    <NumberInput
-                        label="Förbättringsutgifter"
-                        hideControls
-                        styles={inputStyles}
-                        {...form.getInputProps(
-                            "vinstskatt.forbattringsutgifter"
-                        )}
-                        formatter={numberFormatter}
-                    />
-                    <NumberInput
-                        label="Kapitaltillskott"
-                        hideControls
-                        styles={inputStyles}
-                        {...form.getInputProps("vinstskatt.kapitaltillskott")}
-                        formatter={numberFormatter}
-                    />
-                    <NumberInput
-                        label="Andel inre reparationsfond vid försäljning"
-                        hideControls
-                        styles={inputStyles}
-                        {...form.getInputProps(
-                            "vinstskatt.reparationsfondForsaljning"
-                        )}
-                        formatter={numberFormatter}
-                    />
-                    <NumberInput
-                        label="Andel inre reparationsfond vid köp"
-                        hideControls
-                        styles={inputStyles}
-                        {...form.getInputProps("vinstskatt.reparationsfondKop")}
-                        formatter={numberFormatter}
-                    />
-                    <NumberInput
-                        label="Återföring av uppskovsbelopp"
-                        hideControls
-                        styles={inputStyles}
-                        {...form.getInputProps("vinstskatt.aterforingUppskov")}
-                        formatter={numberFormatter}
-                    />
+                            <Input.Wrapper label="Försäljningspris?">
+                                <Input
+                                    component={NumericFormat}
+                                    type="text"
+                                    {...form.getInputProps("forsaljningspris")}
+                                    suffix=" SEK"
+                                    thousandsGroupStyle="thousand"
+                                    thousandSeparator=" "
+                                    allowNegative={false}
+                                />
+                            </Input.Wrapper>
+                        </Stack>
+                    </div>
+
+                    <div className="bg-slate-100 p-4">
+                        <Stack>
+                            <Title order={2}>Beräkna vinstskatt</Title>
+
+                            <Input.Wrapper label="Inköpspris">
+                                <Input
+                                    component={NumericFormat}
+                                    type="text"
+                                    {...form.getInputProps("inkopspris")}
+                                    suffix=" SEK"
+                                    thousandsGroupStyle="thousand"
+                                    thousandSeparator=" "
+                                    allowNegative={false}
+                                />
+                            </Input.Wrapper>
+                            <Input.Wrapper label="Försäljningskostnader">
+                                <Input
+                                    component={NumericFormat}
+                                    type="text"
+                                    {...form.getInputProps(
+                                        "forsaljningskostnader"
+                                    )}
+                                    suffix=" SEK"
+                                    thousandsGroupStyle="thousand"
+                                    thousandSeparator=" "
+                                    allowNegative={false}
+                                />
+                            </Input.Wrapper>
+                            <Input.Wrapper label="Förbättringsutgifter">
+                                <Input
+                                    component={NumericFormat}
+                                    type="text"
+                                    {...form.getInputProps(
+                                        "forbattringsutgifter"
+                                    )}
+                                    suffix=" SEK"
+                                    thousandsGroupStyle="thousand"
+                                    thousandSeparator=" "
+                                    allowNegative={false}
+                                />
+                            </Input.Wrapper>
+                            <Input.Wrapper label="Kapitaltillskott">
+                                <Input
+                                    component={NumericFormat}
+                                    type="text"
+                                    {...form.getInputProps("kapitaltillskott")}
+                                    suffix=" SEK"
+                                    thousandsGroupStyle="thousand"
+                                    thousandSeparator=" "
+                                    allowNegative={false}
+                                />
+                            </Input.Wrapper>
+                            <Input.Wrapper label="Andel inre reparationsfond vid försäljning">
+                                <Input
+                                    component={NumericFormat}
+                                    type="text"
+                                    {...form.getInputProps(
+                                        "reparationsfondForsaljning"
+                                    )}
+                                    suffix=" SEK"
+                                    thousandsGroupStyle="thousand"
+                                    thousandSeparator=" "
+                                    allowNegative={false}
+                                />
+                            </Input.Wrapper>
+                            <Input.Wrapper label="Andel inre reparationsfond vid köp">
+                                <Input
+                                    component={NumericFormat}
+                                    type="text"
+                                    {...form.getInputProps(
+                                        "reparationsfondKop"
+                                    )}
+                                    suffix=" SEK"
+                                    thousandsGroupStyle="thousand"
+                                    thousandSeparator=" "
+                                    allowNegative={false}
+                                />
+                            </Input.Wrapper>
+                            <Input.Wrapper label="Återföring av uppskovsbelopp">
+                                <Input
+                                    component={NumericFormat}
+                                    type="text"
+                                    {...form.getInputProps("aterforingUppskov")}
+                                    suffix=" SEK"
+                                    thousandsGroupStyle="thousand"
+                                    thousandSeparator=" "
+                                    allowNegative={false}
+                                />
+                            </Input.Wrapper>
+                        </Stack>
+                    </div>
                 </Stack>
-                <div className="col-span-6 p-6">
-                    <div className="flex items-center justify-between bg-cyan-900 p-4">
-                        <Title order={5} className="text-white">
-                            Din kontantinsats
-                        </Title>
-                        <Title order={5} color="lime">
-                            {`${yourCashDeposit} SEK`.replace(
+                <div className="col-span-6 self-end p-6">
+                    <div className="mb-4">
+                        <Title order={2}>Resultat</Title>
+                        <Text>
+                            OBS! Detta är bara ungefärliga siffror. Kalkylatorn
+                            tar inget ansvar att dessa är korrekta för dig. Du
+                            behöver räkna på det själv för att få exakta siffror
+                            för dig.
+                        </Text>
+                    </div>
+                    <Divider className="mb-6" />
+                    <div className="mb-4">
+                        <Title order={4}>Vinst</Title>
+                        <Title order={4} color="green">
+                            {`${kvarPaLanet} SEK`.replace(
                                 /(?<!\.\d*)(?<=\d)(?=(\d{3})+(?!\d))/g,
                                 " "
-                            )}{" "}
+                            )}
                         </Title>
                     </div>
-                    <div className="flex items-center justify-between bg-cyan-900 p-4">
-                        <Title order={5} className="text-white">
-                            Vinstskatt
-                        </Title>
-                        <Title order={5} color="red">
-                            {`${yourCashDeposit} SEK`.replace(
+                    <div className="mb-4">
+                        <Title order={4}>Vinstskatt</Title>
+                        <Title order={4} color="red">
+                            {`${vinstskatt} SEK`.replace(
                                 /(?<!\.\d*)(?<=\d)(?=(\d{3})+(?!\d))/g,
                                 " "
-                            )}{" "}
+                            )}
+                        </Title>
+                    </div>
+                    <div>
+                        <Title order={4}>Kvar till kontantinsats</Title>
+                        <Title order={4} color="green">
+                            {`${kontantinsats} SEK`.replace(
+                                /(?<!\.\d*)(?<=\d)(?=(\d{3})+(?!\d))/g,
+                                " "
+                            )}
                         </Title>
                     </div>
                 </div>
             </div>
+
+            <Divider className="mb-6" />
+
+            <div className="mb-6 grid grid-cols-12 gap-6">
+                <Stack className="col-span-6">
+                    <div className="bg-slate-100 p-4">
+                        <Stack>
+                            <Title order={2}>Nya bostaden</Title>
+
+                            <Input.Wrapper label="Priset på nya bostaden">
+                                <Input
+                                    component={NumericFormat}
+                                    type="text"
+                                    {...form.getInputProps("nyaPriset")}
+                                    suffix=" SEK"
+                                    thousandsGroupStyle="thousand"
+                                    thousandSeparator=" "
+                                    allowNegative={false}
+                                />
+                            </Input.Wrapper>
+                            <Input.Wrapper label="Driftkostnad">
+                                <Input
+                                    component={NumericFormat}
+                                    type="text"
+                                    {...form.getInputProps("driftkostnad")}
+                                    suffix=" SEK"
+                                    thousandsGroupStyle="thousand"
+                                    thousandSeparator=" "
+                                    allowNegative={false}
+                                />
+                            </Input.Wrapper>
+                            <Input.Wrapper label="Pantbrev">
+                                <Input
+                                    component={NumericFormat}
+                                    type="text"
+                                    {...form.getInputProps("pantbrev")}
+                                    suffix=" SEK"
+                                    thousandsGroupStyle="thousand"
+                                    thousandSeparator=" "
+                                    allowNegative={false}
+                                />
+                            </Input.Wrapper>
+                            <Input.Wrapper label="Taxeringsvärde">
+                                <Input
+                                    component={NumericFormat}
+                                    type="text"
+                                    {...form.getInputProps("taxeringsvarde")}
+                                    suffix=" SEK"
+                                    thousandsGroupStyle="thousand"
+                                    thousandSeparator=" "
+                                    allowNegative={false}
+                                />
+                            </Input.Wrapper>
+                            <Input.Wrapper label="Fastighetsskatt per år">
+                                <Input
+                                    component={NumericFormat}
+                                    type="text"
+                                    {...form.getInputProps("fastighetsskatt")}
+                                    suffix=" SEK"
+                                    thousandsGroupStyle="thousand"
+                                    thousandSeparator=" "
+                                    allowNegative={false}
+                                />
+                            </Input.Wrapper>
+                            <Input.Wrapper label="Bolåneränta">
+                                <Input
+                                    component={NumericFormat}
+                                    type="text"
+                                    {...form.getInputProps("bolaneranta")}
+                                    suffix=" %"
+                                    thousandsGroupStyle="thousand"
+                                    thousandSeparator=" "
+                                    allowNegative={false}
+                                />
+                            </Input.Wrapper>
+                        </Stack>
+                    </div>
+                </Stack>
+                <div className="col-span-6 self-end">
+                    <div className="mb-4">
+                        <Title order={4}>Minsta kontantinsats</Title>
+                        <Title order={4} color="green">
+                            {`${minstaKontantinsats} SEK`.replace(
+                                /(?<!\.\d*)(?<=\d)(?=(\d{3})+(?!\d))/g,
+                                " "
+                            )}
+                        </Title>
+                    </div>
+
+                    <Stack className="mb-4" spacing={8}>
+                        <Title order={3}>Boende kostand per månad</Title>
+                        <Divider />
+                        <div className="flex items-center justify-between">
+                            <Title order={6}>Ränta</Title>
+                            <Title order={6}>
+                                {`${rantaManad} SEK`.replace(
+                                    /(?<!\.\d*)(?<=\d)(?=(\d{3})+(?!\d))/g,
+                                    " "
+                                )}
+                            </Title>
+                        </div>
+                        <Divider />
+                        <div className="flex items-center justify-between">
+                            <Title order={6}>Driftkostnad</Title>
+                            <Title order={6}>
+                                {`${driftkostnadManad} SEK`.replace(
+                                    /(?<!\.\d*)(?<=\d)(?=(\d{3})+(?!\d))/g,
+                                    " "
+                                )}
+                            </Title>
+                        </div>
+                        <Divider />
+                        <div className="flex items-center justify-between">
+                            <Title order={6}>Fastighetsskatt/-avgift</Title>
+                            <Title order={6}>
+                                {`${fastighetsskattManad} SEK`.replace(
+                                    /(?<!\.\d*)(?<=\d)(?=(\d{3})+(?!\d))/g,
+                                    " "
+                                )}
+                            </Title>
+                        </div>
+                        <Divider />
+                        <div className="flex items-center justify-between">
+                            <Title order={6}>Skattereduktion</Title>
+                            <Title order={6}>
+                                {`${skattereduktionManad} SEK`.replace(
+                                    /(?<!\.\d*)(?<=\d)(?=(\d{3})+(?!\d))/g,
+                                    " "
+                                )}
+                            </Title>
+                        </div>
+                        <Divider />
+                        <div className="flex items-center justify-between">
+                            <Title order={6}>Summa</Title>
+                            <Title order={6}>
+                                {`${summaManad} SEK`.replace(
+                                    /(?<!\.\d*)(?<=\d)(?=(\d{3})+(?!\d))/g,
+                                    " "
+                                )}
+                            </Title>
+                        </div>
+                        <Divider />
+                        <div className="flex items-center justify-between">
+                            <Title order={6}>Amortering</Title>
+                            <Title order={6}>
+                                {`${amorteringManad} SEK`.replace(
+                                    /(?<!\.\d*)(?<=\d)(?=(\d{3})+(?!\d))/g,
+                                    " "
+                                )}
+                            </Title>
+                        </div>
+                        <Divider />
+                        <div className="flex items-center justify-between">
+                            <Title order={4}>
+                                Månadskostnad (inkl amortering)
+                            </Title>
+                            <Title order={4} color="green">
+                                {`${totalaManadsPriset} SEK`.replace(
+                                    /(?<!\.\d*)(?<=\d)(?=(\d{3})+(?!\d))/g,
+                                    " "
+                                )}
+                            </Title>
+                        </div>
+                    </Stack>
+                </div>
+            </div>
         </>
     );
-}
-
-const addCommas = (num: string) => num.replace(/\B(?=(\d{3})+(?!\d))/g, " ");
-const removeNonNumeric = (num: string) => num.replace(/[^0-9]/g, "");
-
-function inputStyles(theme: MantineTheme) {
-    return {
-        input: {
-            backgroundColor: theme.white,
-            color: theme.black,
-        },
-    };
-}
-
-function numberFormatter(value: string) {
-    return addCommas(removeNonNumeric(value));
-    // return !Number.isNaN(parseFloat(value))
-    //     ? `${value} SEK`.replace(/(?<!\.\d*)(?<=\d)(?=(\d{3})+(?!\d))/g, " ")
-    //     : "";
 }

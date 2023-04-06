@@ -1,9 +1,8 @@
-import { type AppType } from "next/app";
-import { MantineProvider } from "@mantine/core";
 import { api } from "@/utils/api";
+import { Container, MantineProvider } from "@mantine/core";
+import { type AppType } from "next/app";
 
 import "@/styles/globals.css";
-import MainLayout from "@/layout/MainLayout";
 
 const MyApp: AppType = ({ Component, pageProps }) => {
     return (
@@ -12,12 +11,12 @@ const MyApp: AppType = ({ Component, pageProps }) => {
             withNormalizeCSS
             theme={{
                 /** Put your mantine theme override here */
-                colorScheme: "dark",
+                colorScheme: "light",
             }}
         >
-            <MainLayout>
+            <Container>
                 <Component {...pageProps} />
-            </MainLayout>
+            </Container>
         </MantineProvider>
     );
 };
