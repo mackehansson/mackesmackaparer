@@ -1,12 +1,10 @@
 import { type NextPage } from "next";
 import Head from "next/head";
 
-import { api } from "@/utils/api";
-import { Stack, Text, Title } from "@mantine/core";
+import { Button, Stack, Text, Title } from "@mantine/core";
+import Link from "next/link";
 
 const Home: NextPage = () => {
-    const hello = api.example.hello.useQuery({ text: "from tRPC" });
-
     return (
         <>
             <Head>
@@ -46,6 +44,9 @@ const Home: NextPage = () => {
                         inte att fyll i formuläret så kanske det dyker upp i
                         framtiden.
                     </Text>
+                    <Link href="/buy-home">
+                        <Button>Köpa nytt boende</Button>
+                    </Link>
                 </Stack>
             </div>
         </>

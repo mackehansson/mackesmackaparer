@@ -15,6 +15,7 @@ type FormData = {
     reparationsfondKop?: string;
     aterforingUppskov?: string;
     nyaPriset?: string;
+    kontantinsats?: string;
     driftkostnad?: string;
     pantbrev?: string;
     taxeringsvarde?: string;
@@ -94,21 +95,35 @@ export default function BuyHomePage() {
         return nyaPriset * 0.15;
     }, [form.values]);
 
+    const nyttBolan = useMemo(() => {
+        const nyaPriset = clearnInput(form.values.nyaPriset);
+        const kontantinsats = clearnInput(form.values.kontantinsats);
+
+        return nyaPriset - kontantinsats;
+    }, [form.values]);
+
     const rantaManad = useMemo(() => {
+        const ranta = clearnInput(form.values.bolaneranta) / 100;
+        return Math.round((nyttBolan * ranta) / 12);
+
         return 0;
-    }, []);
+    }, [nyttBolan, form.values]);
 
     const driftkostnadManad = useMemo(() => {
-        return 0;
-    }, []);
+        const driftkostnad = clearnInput(form.values.driftkostnad);
+        return Math.round(driftkostnad / 12);
+    }, [form.values]);
 
     const fastighetsskattManad = useMemo(() => {
-        return 0;
+        const skatt = clearnInput(form.values.fastighetsskatt);
+        return Math.round(skatt / 12);
     }, []);
 
     const skattereduktionManad = useMemo(() => {
-        return 0;
-    }, []);
+        const ranta = clearnInput(form.values.bolaneranta) / 100;
+        const arsRanta = Math.round(nyttBolan * ranta);
+        return Math.round(arsRanta * 0.03);
+    }, [form.values, nyttBolan]);
 
     const summaManad = useMemo(() => {
         return 0;
@@ -318,7 +333,18 @@ export default function BuyHomePage() {
                                     allowNegative={false}
                                 />
                             </Input.Wrapper>
-                            <Input.Wrapper label="Driftkostnad">
+                            <Input.Wrapper label="Kontantinsats">
+                                <Input
+                                    component={NumericFormat}
+                                    type="text"
+                                    {...form.getInputProps("kontantinsats")}
+                                    suffix=" SEK"
+                                    thousandsGroupStyle="thousand"
+                                    thousandSeparator=" "
+                                    allowNegative={false}
+                                />
+                            </Input.Wrapper>
+                            <Input.Wrapper label="Driftkostnad (per år)">
                                 <Input
                                     component={NumericFormat}
                                     type="text"
@@ -381,6 +407,15 @@ export default function BuyHomePage() {
                         <Title order={4}>Minsta kontantinsats</Title>
                         <Title order={4} color="green">
                             {`${minstaKontantinsats} SEK`.replace(
+                                /(?<!\.\d*)(?<=\d)(?=(\d{3})+(?!\d))/g,
+                                " "
+                            )}
+                        </Title>
+                    </div>
+                    <div className="mb-4">
+                        <Title order={4}>Bolån</Title>
+                        <Title order={4} color="red">
+                            {`${nyttBolan} SEK`.replace(
                                 /(?<!\.\d*)(?<=\d)(?=(\d{3})+(?!\d))/g,
                                 " "
                             )}
